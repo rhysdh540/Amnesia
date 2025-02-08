@@ -1,0 +1,10 @@
+<idea-plugin>
+    <id>dev.rdh.amnesia</id>
+    <name>Amnesia</name>
+    <vendor>rdh</vendor>
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
+    <extensions defaultExtensionNs="com.intellij">
+        <daemon.highlightInfoFilter implementation="dev.rdh.amnesia.ij.AmnesiaHighlightFilter"/>
+    </extensions>
+</idea-plugin>

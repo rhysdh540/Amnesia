@@ -3,6 +3,7 @@ import org.taumc.gradle.compression.task.AdvzipTask
 
 plugins {
     id("java")
+    id("idea")
     id("maven-publish")
     id("org.taumc.gradle.compression") version("0.1.3")
 }
@@ -19,6 +20,13 @@ repositories {
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(8))
+    }
+}
+
+idea {
+    module {
+        isDownloadJavadoc = true
+        isDownloadSources = true
     }
 }
 
