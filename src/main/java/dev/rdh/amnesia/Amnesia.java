@@ -39,22 +39,15 @@ public class Amnesia extends Log.DiagnosticHandler implements Plugin {
 		Log log = Log.instance(context);
 		this.install(log);
 
-		try {
-			(diagnostic_type = JCDiagnostic.class.getDeclaredField("type")).setAccessible(true);
-		} catch (Throwable t) {
-			throw new RuntimeException(t);
-		}
+		diagnostic_type = JCDiagnostic.class.getDeclaredField("type");
+		diagnostic_type.setAccessible(true);
 	}
 
 	@Override
 	public void report(JCDiagnostic diag) {
 		if(diag.getCode().startsWith("compiler.err.unreported.exception")) {
 			if(warn) {
-				try {
-					diagnostic_type.set(diag, DiagnosticType.WARNING);
-				} catch (Throwable t) {
-					throw new RuntimeException(t);
-				}
+				diagnostic_type.set(diag, DiagnosticType.WARNING);
 				prev.report(diag);
 			}
 		} else if(!diag.getCode().equals("compiler.err.except.never.thrown.in.try")) {
@@ -63,36 +56,32 @@ public class Amnesia extends Log.DiagnosticHandler implements Plugin {
 	}
 
 	static {
-		try {
-			int vmVersion = Integer.parseInt(System.getProperty("java.specification.version").split("\\.")[1]);
-			if(vmVersion > 8) {
-				//noinspection JavaReflectionMemberAccess
-				Method getModule = Class.class.getDeclaredMethod("getModule");
-				Object module = getModule.invoke(JavacTask.class);
+		int vmVersion = Integer.parseInt(System.getProperty("java.specification.version").split("\\.")[1]);
+		if(vmVersion > 8) {
+			//noinspection JavaReflectionMemberAccess
+			Method getModule = Class.class.getDeclaredMethod("getModule");
+			Object module = getModule.invoke(JavacTask.class);
 
-				Class<?> moduleClass = module.getClass();
-				if(!moduleClass.getName().equals("java.lang.Module")) {
-					throw new IllegalArgumentException("Not a module: " + moduleClass);
-				}
-
-				Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-				unsafeField.setAccessible(true);
-				Unsafe u = (Unsafe) unsafeField.get(null);
-
-				Field f = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-				MethodHandles.Lookup lookup = (MethodHandles.Lookup) u.getObject(u.staticFieldBase(f), u.staticFieldOffset(f));
-
-				MethodHandle implAddOpens = lookup.findVirtual(moduleClass, "implAddOpens", MethodType.methodType(void.class, String.class));
-
-				@SuppressWarnings("unchecked")
-				Set<String> packages = (Set<String>) moduleClass.getDeclaredMethod("getPackages").invoke(module);
-
-				for(String pn : packages) {
-					implAddOpens.invoke(module, pn);
-				}
+			Class<?> moduleClass = module.getClass();
+			if(!moduleClass.getName().equals("java.lang.Module")) {
+				throw new IllegalArgumentException("Not a module: " + moduleClass);
 			}
-		} catch (Throwable t) {
-			throw new RuntimeException(t);
+
+			Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+			unsafeField.setAccessible(true);
+			Unsafe u = (Unsafe) unsafeField.get(null);
+
+			Field f = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+			MethodHandles.Lookup lookup = (MethodHandles.Lookup) u.getObject(u.staticFieldBase(f), u.staticFieldOffset(f));
+
+			MethodHandle implAddOpens = lookup.findVirtual(moduleClass, "implAddOpens", MethodType.methodType(void.class, String.class));
+
+			@SuppressWarnings("unchecked")
+			Set<String> packages = (Set<String>) moduleClass.getDeclaredMethod("getPackages").invoke(module);
+
+			for(String pn : packages) {
+				implAddOpens.invoke(module, pn);
+			}
 		}
 	}
 }
