@@ -1,12 +1,8 @@
 = Amnesia
-:toc:
-:toc-placement!:
 :version: 1.0
 
 Amnesia is a plugin for the Java compiler (`javac`) that turns off its constraints for checked exceptions,
 so that all exceptions behave like unchecked exceptions (those that extend `java.lang.RuntimeException`).
-
-toc::[]
 
 == Usage
 
