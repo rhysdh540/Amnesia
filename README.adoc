@@ -149,7 +149,7 @@ That's it! Now, all exceptions will behave like unchecked exceptions.
 
 == Configuration
 Currently, Amnesia only has one option, `-warn`.
-Pass it after `-Xplugin:amnesia` to enable warnings for unchecked exceptions,
+Pass it after `-Xplugin:amnesia` to enable warnings for ignoring checked exceptions,
 instead of completely ignoring them.
 
 == Why?
