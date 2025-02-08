@@ -1,0 +1,207 @@
+= Amnesia
+:toc:
+:toc-placement!:
+:version: 1.0
+
+Amnesia is a plugin for the Java compiler (`javac`) that turns off its constraints for checked exceptions,
+so that all exceptions behave like unchecked exceptions (those that extend `java.lang.RuntimeException`).
+
+toc::[]
+
+== Usage
+
+.Gradle Kotlin DSL
+[%collapsible%open]
+====
+First, add the TauMC maven repository:
+[source,kts]
+----
+repositories {
+    maven("https://maven.taumc.org/releases")
+}
+----
+
+Then, add the dependency:
+[source,kts,subs="attributes+"]
+----
+dependencies {
+    annotationProcessor("dev.rdh:amnesia:{version}")
+}
+----
+
+Finally, add the plugin to your compiler configuration:
+[source,kts]
+----
+tasks.withType<JavaCompile> {
+    options.compilerArgs.add("-Xplugin:amnesia")
+}
+----
+====
+
+.Gradle Groovy DSL
+[%collapsible]
+====
+First, add the TauMC maven repository:
+[source,gradle]
+----
+repositories {
+    maven { url 'https://maven.taumc.org/releases' }
+}
+----
+
+Then, add the dependency:
+[source,gradle,subs="attributes+"]
+----
+dependencies {
+    annotationProcessor 'dev.rdh:amnesia:{version}'
+}
+----
+
+Finally, add the plugin to your compiler configuration:
+[source,gradle]
+----
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ["-Xplugin:amnesia"]
+}
+----
+====
+
+.Maven
+[%collapsible]
+====
+First, add the TauMC maven repository:
+[source,xml]
+----
+<repositories>
+    <repository>
+        <id>taumc-releases</id>
+        <url>https://maven.taumc.org/releases</url>
+    </repository>
+</repositories>
+----
+
+Then, declare the version:
+[source,xml,subs="attributes+"]
+----
+<properties>
+    <amnesia.version>{version}</amnesia.version>
+</properties>
+----
+
+Next, add the dependency:
+[source,xml]
+----
+<dependency>
+    <groupId>dev.rdh</groupId>
+    <artifactId>amnesia</artifactId>
+    <version>${amnesia.version}</version>
+    <scope>provided</scope>
+</dependency>
+----
+
+Finally, add the plugin to your compiler configuration:
+[source,xml]
+----
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.8.0</version>
+            <configuration>
+                <compilerArgs>
+                    <!-- Configure the plugin -->
+                    <arg>-Xplugin:amnesia</arg>
+                </compilerArgs>
+                <!-- Add the plugin to the annotation processor path -->
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>dev.rdh</groupId>
+                        <artifactId>amnesia</artifactId>
+                        <version>${amnesia.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+----
+====
+
+.SBT
+[%collapsible]
+====
+First, add the TauMC maven repository:
+[source,scala]
+----
+resolvers += "TauMC Releases" at "https://maven.taumc.org/releases"
+----
+
+Then, add the dependency:
+[source,scala,subs="attributes+"]
+----
+libraryDependencies += "dev.rdh" % "amnesia" % "{version}" % "provided"
+----
+
+Finally, add the plugin to your compiler configuration:
+[source,scala]
+----
+javacOptions += "-Xplugin:amnesia"
+----
+====
+That's it! Now, all exceptions will behave like unchecked exceptions.
+
+== Configuration
+Currently, Amnesia only has one option, `-warn`.
+Pass it after `-Xplugin:amnesia` to enable warnings for unchecked exceptions,
+instead of completely ignoring them.
+
+== Why?
+Checked exceptions are a controversial feature of Java.
+They lead to ugly boilerplate code, such as this:
+[source,java]
+----
+String text;
+try {
+    text = Files.readString(Paths.get("file.txt"));
+} catch (IOException e) {
+    throw new UncheckedIOException(e);
+}
+process(text);
+----
+
+This is especially annoying when you know that the exception will never be thrown,
+or are simply going to throw it again with another exception type,
+such as `UncheckedIOException` in the example above.
+
+Worse, however, is in lambdas:
+[source,java]
+----
+List<String> lines = paths.stream()
+    .map(path -> {
+        try {
+            return Files.readString(path);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    })
+    .toList();
+----
+
+This is because checked exceptions aren't allowed in lambda expressions such as `Function` or `Consumer`.
+
+With Amnesia, the compiler forgets about checked exceptions, so you can write the above code like this:
+
+[source,java]
+----
+process(Files.readString(Paths.get("file.txt")));
+----
+[source,java]
+----
+List<String> lines = paths.stream().map(Files::readString).toList();
+----
+
+This is also why other JVM languages, such as Kotlin and Scala, do not have this concept of checked exceptions.
+
+== License
+Amnesia is released into the public domain under the Unlicense.
