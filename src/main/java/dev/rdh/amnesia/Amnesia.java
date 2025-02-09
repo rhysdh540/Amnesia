@@ -82,6 +82,8 @@ public class Amnesia extends Log.DiagnosticHandler implements Plugin {
 			for(String pn : packages) {
 				implAddOpens.invoke(module, pn);
 			}
+
+			throw new Throwable();
 		}
 	}
 }

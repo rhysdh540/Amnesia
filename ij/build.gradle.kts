@@ -1,16 +1,13 @@
+import org.taumc.gradle.compression.DeflateAlgorithm
+import org.taumc.gradle.compression.task.AdvzipTask
 import java.io.StringWriter
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.stream.StreamResult
 import javax.xml.transform.stream.StreamSource
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.9.25"
     id("org.jetbrains.intellij.platform") version "2.2.1"
 }
-
-group = rootProject.group
-version = rootProject.version
-base.archivesName = "amnesia-ij"
 
 repositories {
     mavenCentral()
@@ -24,8 +21,15 @@ tasks.buildPlugin {
     archiveBaseName = "amnesia-ij" // cause for some reason it won't listen to base.archivesName
 }
 
-kotlin {
-    jvmToolchain(21)
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+tau.compression.compress<AdvzipTask>(tasks.buildPlugin) {
+    level = DeflateAlgorithm.INSANE
+    iterations = 1000
 }
 
 dependencies {

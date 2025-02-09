@@ -1,5 +1,6 @@
 import org.taumc.gradle.compression.DeflateAlgorithm
 import org.taumc.gradle.compression.task.AdvzipTask
+import org.taumc.gradle.util.capitalized
 
 plugins {
     id("java")
@@ -13,13 +14,20 @@ repositories {
     maven("https://maven.taumc.org/releases")
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+    }
+}
+
 allprojects {
+    apply(plugin = "java")
     apply(plugin = "idea")
     apply(plugin = "org.taumc.gradle.compression")
 
     group = "dev.rdh"
     version = "1.1"
-    base.archivesName = "amnesia${if (project == rootProject) "-${project.name}" else ""}"
+    base.archivesName = "amnesia${if (project != rootProject) "-${project.name}" else ""}"
 
     idea {
         module {
@@ -30,12 +38,16 @@ allprojects {
 
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
-        options.compilerArgs.addAll(listOf("-Xplugin:amnesia", "-g:none"))
+        options.compilerArgs.add("-g:none")
     }
 
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(8))
+    tasks.jar {
+        isReproducibleFileOrder = true
+        isPreserveFileTimestamps = false
+
+        manifest {
+            attributes["Implementation-Title"] = "Amnesia${if (project != rootProject) " ${project.name.capitalized()}" else ""}"
+            attributes["Implementation-Version"] = version
         }
     }
 }
@@ -47,14 +59,8 @@ dependencies {
     annotationProcessor("dev.rdh:amnesia:1.0")
 }
 
-tasks.jar {
-    isReproducibleFileOrder = true
-    isPreserveFileTimestamps = false
-
-    manifest {
-        attributes["Implementation-Title"] = "Amnesia"
-        attributes["Implementation-Version"] = version
-    }
+tasks.compileJava {
+    options.compilerArgs.add("-Xplugin:amnesia")
 }
 
 val compressJar = tau.compression.compress<AdvzipTask>(tasks.jar) {
