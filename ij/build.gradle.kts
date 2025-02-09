@@ -8,11 +8,20 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.2.1"
 }
 
+group = rootProject.group
+version = rootProject.version
+base.archivesName = "amnesia-ij"
+
 repositories {
     mavenCentral()
     intellijPlatform {
         defaultRepositories()
     }
+}
+
+tasks.buildPlugin {
+    tasks["assemble"].dependsOn(this)
+    archiveBaseName = "amnesia-ij" // cause for some reason it won't listen to base.archivesName
 }
 
 kotlin {
