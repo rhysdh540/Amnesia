@@ -22,40 +22,46 @@ public class Amnesia extends Log.DiagnosticHandler implements Plugin {
 		return "amnesia";
 	}
 
-	private boolean warn = false;
-	private Field diagnostic_type;
+	private DiagnosticType type = null;
+	private static final MethodHandle setter;
 
 	@Override
 	public void init(JavacTask task, String... args) {
 		for(String arg : args) {
 			if(arg.equals("-warn")) {
-				warn = true;
+				type = DiagnosticType.WARNING;
+			} else if(arg.equals("-note")) {
+				type = DiagnosticType.NOTE;
 			} else {
 				throw new IllegalArgumentException("Unknown argument: " + arg);
 			}
 		}
 
 		Context context = ((BasicJavacTask) task).getContext();
-		Log log = Log.instance(context);
-		this.install(log);
-
-		diagnostic_type = JCDiagnostic.class.getDeclaredField("type");
-		diagnostic_type.setAccessible(true);
+		this.install(Log.instance(context));
 	}
 
 	@Override
 	public void report(JCDiagnostic diag) {
-		if(diag.getCode().startsWith("compiler.err.unreported.exception")) {
-			if(warn) {
-				diagnostic_type.set(diag, DiagnosticType.WARNING);
+		String message = diag.getCode();
+		if(message.startsWith("compiler.err.unreported.exception") || message.equals("compiler.err.except.never.thrown.in.try")) {
+			if(type != null) {
+				setter.invoke(diag, type);
 				prev.report(diag);
 			}
-		} else if(!diag.getCode().equals("compiler.err.except.never.thrown.in.try")) {
+		} else {
 			prev.report(diag);
 		}
 	}
 
 	static {
+		Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+		unsafeField.setAccessible(true);
+		Unsafe u = (Unsafe) unsafeField.get(null);
+
+		Field f = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+		MethodHandles.Lookup lookup = (MethodHandles.Lookup) u.getObject(u.staticFieldBase(f), u.staticFieldOffset(f));
+
 		int vmVersion = Integer.parseInt(System.getProperty("java.specification.version").split("\\.")[1]);
 		if(vmVersion > 8) {
 			//noinspection JavaReflectionMemberAccess
@@ -67,13 +73,6 @@ public class Amnesia extends Log.DiagnosticHandler implements Plugin {
 				throw new IllegalArgumentException("Not a module: " + moduleClass);
 			}
 
-			Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-			unsafeField.setAccessible(true);
-			Unsafe u = (Unsafe) unsafeField.get(null);
-
-			Field f = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-			MethodHandles.Lookup lookup = (MethodHandles.Lookup) u.getObject(u.staticFieldBase(f), u.staticFieldOffset(f));
-
 			MethodHandle implAddOpens = lookup.findVirtual(moduleClass, "implAddOpens", MethodType.methodType(void.class, String.class));
 
 			@SuppressWarnings("unchecked")
@@ -83,5 +82,7 @@ public class Amnesia extends Log.DiagnosticHandler implements Plugin {
 				implAddOpens.invoke(module, pn);
 			}
 		}
+
+		setter = lookup.findSetter(JCDiagnostic.class, "type", DiagnosticType.class);
 	}
 }

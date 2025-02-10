@@ -9,11 +9,6 @@ plugins {
     id("org.taumc.gradle.compression") version("0.1.3")
 }
 
-repositories {
-    mavenCentral()
-    maven("https://maven.taumc.org/releases")
-}
-
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(8))
@@ -26,7 +21,7 @@ allprojects {
     apply(plugin = "org.taumc.gradle.compression")
 
     group = "dev.rdh"
-    version = "1.1"
+    version = "1.1.0"
     base.archivesName = "amnesia${if (project != rootProject) "-${project.name}" else ""}"
 
     idea {
@@ -39,6 +34,15 @@ allprojects {
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-g:none")
+    }
+
+    repositories {
+        mavenCentral()
+        maven("https://maven.taumc.org/releases")
+    }
+
+    dependencies {
+        annotationProcessor("dev.rdh:amnesia:1.0")
     }
 
     tasks.jar {
@@ -56,7 +60,6 @@ val java8 = javaToolchains.compilerFor { languageVersion.set(JavaLanguageVersion
 
 dependencies {
     implementation(files("${java8.metadata.installationPath}/lib/tools.jar"))
-    annotationProcessor("dev.rdh:amnesia:1.0")
 }
 
 tasks.compileJava {

@@ -10,7 +10,6 @@ plugins {
 }
 
 repositories {
-    mavenCentral()
     intellijPlatform {
         defaultRepositories()
     }
