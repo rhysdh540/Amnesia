@@ -6,7 +6,7 @@ plugins {
     id("java")
     id("idea")
     id("maven-publish")
-    id("org.taumc.gradle.compression") version("0.1.3")
+    id("org.taumc.gradle.compression") version("0.3.27")
 }
 
 java {
@@ -38,11 +38,12 @@ allprojects {
 
     repositories {
         mavenCentral()
+        mavenLocal()
         maven("https://maven.taumc.org/releases")
     }
 
     dependencies {
-        annotationProcessor("dev.rdh:amnesia:1.0")
+        annotationProcessor("dev.rdh:amnesia:1.1.0")
     }
 
     tasks.jar {

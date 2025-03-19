@@ -15,6 +15,8 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Amnesia extends Log.DiagnosticHandler implements Plugin {
 	@Override
@@ -62,7 +64,13 @@ public class Amnesia extends Log.DiagnosticHandler implements Plugin {
 		Field f = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
 		MethodHandles.Lookup lookup = (MethodHandles.Lookup) u.getObject(u.staticFieldBase(f), u.staticFieldOffset(f));
 
-		int vmVersion = Integer.parseInt(System.getProperty("java.specification.version").split("\\.")[1]);
+		String version = System.getProperty("java.specification.version");
+		Matcher m = Pattern.compile("^(?:1\\.)?(\\d+).*").matcher(version);
+		if(!m.find()) {
+			throw new IllegalArgumentException("Invalid version: " + version);
+		}
+
+		int vmVersion = Integer.parseInt(m.group(1));
 		if(vmVersion > 8) {
 			//noinspection JavaReflectionMemberAccess
 			Method getModule = Class.class.getDeclaredMethod("getModule");
